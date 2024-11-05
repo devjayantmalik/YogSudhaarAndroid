@@ -1,6 +1,7 @@
 package com.developbharat.yogsudhaar.ui.screens.check
 
+import com.developbharat.yogsudhaar.domain.models.Asana
+
 data class CheckScreenState(
-    // TODO: replace with actual properties
-    val isOk: Boolean = true
+    val selectedAsana: Asana,
 )

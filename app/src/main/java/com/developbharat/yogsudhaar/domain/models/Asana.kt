@@ -1,10 +1,14 @@
-package com.developbharat.yogsudhaar.ui.domain.models
+package com.developbharat.yogsudhaar.domain.models
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class CameraMode {
     Portrait,
     Landscape
 }
 
+@Serializable
 data class Asana(
     val name: String,
     val resourceId: Int,

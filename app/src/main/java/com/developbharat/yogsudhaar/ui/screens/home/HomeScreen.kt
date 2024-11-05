@@ -29,9 +29,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.developbharat.yogsudhaar.R
-import com.developbharat.yogsudhaar.ui.domain.common.Screens
-import com.developbharat.yogsudhaar.ui.domain.models.Asana
-import com.developbharat.yogsudhaar.ui.domain.models.CameraMode
+import com.developbharat.yogsudhaar.common.Screens
+import com.developbharat.yogsudhaar.domain.models.Asana
+import com.developbharat.yogsudhaar.domain.models.CameraMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,8 +61,7 @@ fun HomeScreen(navController: NavController) {
             ) {
                 items(asanas) { item ->
                     Card(onClick = {
-                        // TODO: add logic to navigate to camera preview screen
-                        navController.navigate(Screens.CheckScreen)
+                        navController.navigate(Screens.CheckScreen(asana = item))
                     }, border = BorderStroke(1.dp, Color.Gray), shape = RoundedCornerShape(5.dp)) {
                         Image(
                             painter = painterResource(item.resourceId), contentDescription = "${item.name} asana",
