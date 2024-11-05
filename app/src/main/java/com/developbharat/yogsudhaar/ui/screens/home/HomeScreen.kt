@@ -27,13 +27,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.developbharat.yogsudhaar.R
+import com.developbharat.yogsudhaar.ui.domain.common.Screens
 import com.developbharat.yogsudhaar.ui.domain.models.Asana
 import com.developbharat.yogsudhaar.ui.domain.models.CameraMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(navController: NavController) {
     // TODO: replace list with actual asana list from constants
     val asanas: List<Asana> = listOf(
         Asana(
@@ -60,6 +62,7 @@ fun HomeScreen() {
                 items(asanas) { item ->
                     Card(onClick = {
                         // TODO: add logic to navigate to camera preview screen
+                        navController.navigate(Screens.CheckScreen)
                     }, border = BorderStroke(1.dp, Color.Gray), shape = RoundedCornerShape(5.dp)) {
                         Image(
                             painter = painterResource(item.resourceId), contentDescription = "${item.name} asana",

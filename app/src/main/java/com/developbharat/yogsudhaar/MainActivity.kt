@@ -4,6 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.developbharat.yogsudhaar.ui.domain.common.Screens
+import com.developbharat.yogsudhaar.ui.screens.check.CheckScreen
 import com.developbharat.yogsudhaar.ui.screens.home.HomeScreen
 import com.developbharat.yogsudhaar.ui.theme.YogSudhaarTheme
 
@@ -13,7 +18,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             YogSudhaarTheme {
-                HomeScreen()
+                val navController = rememberNavController()
+                NavHost(navController = navController, startDestination = Screens.HomeScreen) {
+                    // chat screens
+                    composable<Screens.HomeScreen> { HomeScreen(navController) }
+                    composable<Screens.CheckScreen> { CheckScreen(navController) }
+                }
             }
         }
     }
