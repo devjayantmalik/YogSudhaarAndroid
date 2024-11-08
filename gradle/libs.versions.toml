@@ -1,5 +1,5 @@
 [versions]
-agp = "8.7.0-beta01"
+agp = "8.7.0-rc01"
 kotlin = "2.0.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -8,13 +8,14 @@ espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.9.3"
 composeBom = "2024.10.01"
-desugar_jdk_libs = "2.1.2"
+desugar_jdk_libs = "2.1.3"
 kotlinxSerialization = "1.9.23"
 kotlinxSerializationJson = "1.6.3"
 composeNavigation = "2.8.3"
 ksp = "2.0.0-1.0.22"
 cameraX = "1.4.0"
 materialIconsExtended = "1.7.5"
+poseDetection = "18.0.0-beta5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -42,6 +43,7 @@ androidx-camera-video = { group = "androidx.camera", name = "camera-video", vers
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraX" }
 androidx-camera-extensions = { group = "androidx.camera", name = "camera-extensions", version.ref = "cameraX" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
+pose-detection-accurate = { module = "com.google.mlkit:pose-detection-accurate", version.ref = "poseDetection" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

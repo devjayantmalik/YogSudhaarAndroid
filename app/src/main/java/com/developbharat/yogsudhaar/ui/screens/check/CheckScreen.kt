@@ -44,7 +44,7 @@ fun CheckScreen(navController: NavController, viewModel: CheckViewModel = viewMo
 
     LaunchedEffect(Unit) {
         CameraOptions.frameAnalysisOptions.setAnalyzer(Dispatchers.Default.asExecutor()) { frame ->
-            // TODO: integrate mediapipe with application to detect poses
+            viewModel.detectPose(frame)
         }
     }
 

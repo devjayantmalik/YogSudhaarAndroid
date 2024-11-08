@@ -19,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +31,7 @@ import com.developbharat.yogsudhaar.R
 import com.developbharat.yogsudhaar.common.Screens
 import com.developbharat.yogsudhaar.domain.models.Asana
 import com.developbharat.yogsudhaar.domain.models.CameraMode
+import com.developbharat.yogsudhaar.ui.screens.components.SmallTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +51,12 @@ fun HomeScreen(navController: NavController) {
     )
 
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Yog Sudhaar") }) }) { paddingValues ->
+    Scaffold(topBar = {
+        SmallTopBar(
+            title = "Yog Sudhaar",
+            subtitle = "Encourage correct Yoga Exercises."
+        )
+    }) { paddingValues ->
         Surface(modifier = Modifier.padding(paddingValues)) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
