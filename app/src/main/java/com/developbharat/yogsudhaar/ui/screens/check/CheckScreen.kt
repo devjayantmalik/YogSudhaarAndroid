@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.developbharat.yogsudhaar.common.CameraOptions
@@ -24,6 +25,9 @@ import com.developbharat.yogsudhaar.common.SetScreenOrientation
 import com.developbharat.yogsudhaar.domain.models.CameraMode
 import com.developbharat.yogsudhaar.ui.screens.components.CameraPreview
 import com.developbharat.yogsudhaar.ui.screens.components.SmallTopBar
+import com.google.mediapipe.tasks.vision.core.RunningMode
+import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
+import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker.PoseLandmarkerOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 
@@ -31,6 +35,7 @@ import kotlinx.coroutines.asExecutor
 @Composable
 fun CheckScreen(navController: NavController, viewModel: CheckViewModel = viewModel()) {
     val uiState = viewModel.uiState.value
+    val context = LocalContext.current;
     var isFrontCameraSelected by remember { mutableStateOf(true) }
 
     // set screen orientation
@@ -40,11 +45,20 @@ fun CheckScreen(navController: NavController, viewModel: CheckViewModel = viewMo
         SetScreenOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
     }
 
-    // TODO: ask for camera permission if not granted, if declined show error instead of camera ui
+    val detector = remember {
+        val modelOptions = PoseLandmarkerOptions.builder()
+            .setBaseOptions(CameraOptions.baseModelOptions)
+            .setRunningMode(RunningMode.IMAGE)
+            .build()
 
+        PoseLandmarker.createFromOptions(context, modelOptions)
+    }
+
+
+    // TODO: ask for camera permission if not granted, if declined show error instead of camera ui
     LaunchedEffect(Unit) {
         CameraOptions.frameAnalysisOptions.setAnalyzer(Dispatchers.Default.asExecutor()) { frame ->
-            viewModel.detectPose(frame)
+            viewModel.detectPose(detector, frame, isFrontCameraSelected)
         }
     }
 

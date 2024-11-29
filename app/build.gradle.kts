@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.developbharat.yogsudhaar"
-        minSdk = 21
+        minSdk = 24
         //noinspection EditedTargetSdkVersion
         targetSdk = 35
         versionCode = 1
@@ -76,7 +76,7 @@ dependencies {
     implementation(libs.androidx.camera.extensions)
 
     // posture detection
-    implementation(libs.pose.detection.accurate)
+    implementation(libs.mediapipe.tasks.vision)
 
     // tests
     testImplementation(libs.junit)

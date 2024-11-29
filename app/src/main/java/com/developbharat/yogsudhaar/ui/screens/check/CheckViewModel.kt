@@ -1,8 +1,8 @@
 package com.developbharat.yogsudhaar.ui.screens.check
 
+import android.graphics.Bitmap
+import android.graphics.Matrix
 import android.util.Log
-import androidx.annotation.OptIn
-import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -10,58 +10,50 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.developbharat.yogsudhaar.common.Screens
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.pose.Pose
-import com.google.mlkit.vision.pose.PoseDetection
-import com.google.mlkit.vision.pose.accurate.AccuratePoseDetectorOptions
+import com.google.mediapipe.framework.image.BitmapImageBuilder
+import com.google.mediapipe.framework.image.MPImage
+import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
 import kotlinx.coroutines.launch
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel() {
-    /**
-     * Prepare pose detection options
-     */
-    private val options = AccuratePoseDetectorOptions.Builder()
-        .setDetectorMode(AccuratePoseDetectorOptions.STREAM_MODE)
-        .setPreferredHardwareConfigs(AccuratePoseDetectorOptions.CPU_GPU)
-        .build()
-    private val poseDetector = PoseDetection.getClient(options)
-
     private val _uiState =
         mutableStateOf(CheckScreenState(selectedAsana = Screens.CheckScreen.from(savedStateHandle).asana))
     val uiState: State<CheckScreenState> = _uiState
 
 
-    @OptIn(ExperimentalGetImage::class)
-    fun detectPose(frame: ImageProxy) {
+    fun detectPose(detector: PoseLandmarker, frame: ImageProxy, isFrontCamera: Boolean) {
         viewModelScope.launch {
-            val image = InputImage.fromMediaImage(frame.image!!, frame.imageInfo.rotationDegrees)
-            val detection = findPosture(image)
-
-            // skip frame if detection fails
-            if (detection == null) return@launch frame.close();
-
-            // show all landmarks
-            // TODO: use detected landmarks to predict correct or incorrect posture.
-            val landmarks = detection.allPoseLandmarks
-            Log.d("landmarks", landmarks.toString())
-
-            // close the frame finally
+            val mpImage = convertToModelInput(frame, isFrontCamera)
+            val landmarks = detector.detect(mpImage).landmarks()
+            var first = landmarks.toList().first()
+            var landmark = first.first()
+            var x = landmark.x();
+            var y = landmark.y();
+            var z = landmark.z();
+            Log.d("PoseLandmarker", "Landmark: x=$x, y=$y, z=$z")
             frame.close()
         }
     }
 
-    suspend fun findPosture(frame: InputImage): Pose? {
-        return suspendCoroutine { continuation ->
-            val task = this.poseDetector.process(frame)
-                .addOnSuccessListener { results ->
-                    continuation.resume(results)
-                }
-                .addOnFailureListener { e ->
-                    Log.d("error", e.localizedMessage ?: "Unknown error during pose detection.")
-                    continuation.resume(null)
-                }
+    private fun convertToModelInput(frame: ImageProxy, isFrontCamera: Boolean): MPImage {
+        // Copy out RGB bits from the frame to a bitmap buffer
+        val buffer = Bitmap.createBitmap(frame.width, frame.height, Bitmap.Config.ARGB_8888)
+        frame.use { buffer.copyPixelsFromBuffer(frame.planes[0].buffer) }
+
+        val matrix = Matrix().apply {
+            // Rotate the frame received from the camera to be in the same direction as it'll be shown
+            postRotate(frame.imageInfo.rotationDegrees.toFloat())
+
+            // flip image if user use front camera
+            if (isFrontCamera) {
+                postScale(-1f, 1f, frame.width.toFloat(), frame.height.toFloat())
+            }
         }
+
+        val rotated = Bitmap.createBitmap(buffer, 0, 0, buffer.width, buffer.height, matrix, true)
+
+        // Convert the input Bitmap object to an MPImage object to run inference
+        val mpImage = BitmapImageBuilder(rotated).build()
+        return mpImage;
     }
 }
