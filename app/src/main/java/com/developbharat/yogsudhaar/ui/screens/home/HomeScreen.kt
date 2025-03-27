@@ -47,6 +47,11 @@ fun HomeScreen(navController: NavController) {
             name = "Veerbhadrasana",
             resourceId = R.drawable.icon_veerbhadrasana,
             cameraMode = CameraMode.Portrait
+        ),
+        Asana(
+            name = "Vrikshana",
+            resourceId = R.drawable.icon_vrikshana,
+            cameraMode = CameraMode.Portrait
         )
     )
 
@@ -69,7 +74,8 @@ fun HomeScreen(navController: NavController) {
                         navController.navigate(Screens.CheckScreen(asana = item))
                     }, border = BorderStroke(1.dp, Color.Gray), shape = RoundedCornerShape(5.dp)) {
                         Image(
-                            painter = painterResource(item.resourceId), contentDescription = "${item.name} asana",
+                            painter = painterResource(item.resourceId),
+                            contentDescription = "${item.name} asana",
                             modifier = Modifier
                                 .height(100.dp)
                                 .fillMaxWidth()
@@ -79,7 +85,10 @@ fun HomeScreen(navController: NavController) {
                         )
                         Column(modifier = Modifier.padding(10.dp)) {
                             Text(item.name, style = MaterialTheme.typography.titleMedium)
-                            Text("${item.cameraMode.name} Mode", style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                "${item.cameraMode.name} Mode",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
                     }
                 }

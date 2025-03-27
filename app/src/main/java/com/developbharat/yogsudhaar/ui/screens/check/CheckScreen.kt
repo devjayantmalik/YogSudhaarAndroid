@@ -36,7 +36,7 @@ import kotlinx.coroutines.asExecutor
 fun CheckScreen(navController: NavController, viewModel: CheckViewModel = viewModel()) {
     val uiState = viewModel.uiState.value
     val context = LocalContext.current;
-    var isFrontCameraSelected by remember { mutableStateOf(true) }
+    var isFrontCameraSelected by remember { mutableStateOf(false) }
 
     // set screen orientation
     if (uiState.selectedAsana.cameraMode == CameraMode.Portrait) {
@@ -58,14 +58,14 @@ fun CheckScreen(navController: NavController, viewModel: CheckViewModel = viewMo
     // TODO: ask for camera permission if not granted, if declined show error instead of camera ui
     LaunchedEffect(Unit) {
         CameraOptions.frameAnalysisOptions.setAnalyzer(Dispatchers.Default.asExecutor()) { frame ->
-            viewModel.detectPose(detector, frame, isFrontCameraSelected)
+            viewModel.detectPose(detector, frame, isFrontCameraSelected, context)
         }
     }
 
     Scaffold(topBar = {
         SmallTopBar(
             title = uiState.selectedAsana.name,
-            subtitle = "${uiState.selectedAsana.cameraMode.name} Mode",
+            subtitle = uiState.status ?: "${uiState.selectedAsana.cameraMode.name} Mode",
             actions = {
                 IconButton(onClick = { isFrontCameraSelected = !isFrontCameraSelected }) {
                     Icon(

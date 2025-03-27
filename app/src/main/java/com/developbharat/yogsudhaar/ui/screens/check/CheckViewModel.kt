@@ -1,36 +1,110 @@
 package com.developbharat.yogsudhaar.ui.screens.check
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.util.Log
 import androidx.camera.core.ImageProxy
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.developbharat.yogsudhaar.R
 import com.developbharat.yogsudhaar.common.Screens
+import com.developbharat.yogsudhaar.domain.api.IRemoteSource
+import com.developbharat.yogsudhaar.domain.api.dto.IsPoseCorrectInput
+import com.developbharat.yogsudhaar.domain.api.dto.IsPoseCorrectResult
+import com.developbharat.yogsudhaar.domain.api.dto.PoseData
+import com.developbharat.yogsudhaar.domain.splitters.VrksasanaSplitter
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.framework.image.MPImage
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
 import kotlinx.coroutines.launch
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import kotlin.jvm.optionals.getOrNull
 
 class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel() {
+    private var framesData: MutableList<List<Double>> = mutableListOf()
     private val _uiState =
         mutableStateOf(CheckScreenState(selectedAsana = Screens.CheckScreen.from(savedStateHandle).asana))
     val uiState: State<CheckScreenState> = _uiState
+    val retrofit = Retrofit.Builder()
+        .baseUrl("https://cdis.iitk.ac.in/yog-sudhar/")
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+    val remoteSource = retrofit.create(IRemoteSource::class.java)
 
 
-    fun detectPose(detector: PoseLandmarker, frame: ImageProxy, isFrontCamera: Boolean) {
+    fun detectPose(
+        detector: PoseLandmarker,
+        frame: ImageProxy,
+        isFrontCamera: Boolean,
+        context: Context
+    ) {
         viewModelScope.launch {
+//            // TODO: Remove 2 lines to stop reading static image, and rather switch to live camera stream
+//            val bitmap = ResourcesCompat.getDrawable(context.resources, R.drawable.sample, null)!!
+//                .toBitmap(config = Bitmap.Config.ARGB_8888)
+//            val mpImage: MPImage = BitmapImageBuilder(bitmap).build()
             val mpImage = convertToModelInput(frame, isFrontCamera)
-            val landmarks = detector.detect(mpImage).landmarks()
-            var first = landmarks.toList().first()
-            var landmark = first.first()
-            var x = landmark.x();
-            var y = landmark.y();
-            var z = landmark.z();
-            Log.d("PoseLandmarker", "Landmark: x=$x, y=$y, z=$z")
+            val landmarksList = detector.detect(mpImage).landmarks()
+            if (landmarksList.isEmpty()) {
+                frame.close()
+                return@launch
+            }
+            val landmarks = landmarksList.first()
+
+            // Format poses and add to frames.
+            val poses = mutableListOf<Double>()
+            poses.add(framesData.count().toDouble())
+            landmarks.forEach { item ->
+                poses.add(item.x().toDouble())
+                poses.add(item.y().toDouble())
+                poses.add(item.z().toDouble())
+                poses.add(item.visibility().getOrNull()?.toDouble() ?: 0.0)
+            }
+            framesData.add(poses)
+            val indexes = VrksasanaSplitter().split(framesData)
+            if (indexes == null) {
+                frame.close();
+                return@launch
+            }
+
+            // Get repetition data and remove repetition from frames data
+            val repetition = framesData.subList(indexes.first, indexes.second + 1).toList()
+            framesData = framesData.subList(indexes.second, framesData.count())
+
+            // Check if pose is correct.
+            try {
+                val data = IsPoseCorrectInput(frames = listOf(PoseData(poses = repetition)))
+                val response = remoteSource.isPoseCorrect(data)
+                _uiState.value = _uiState.value.copy(
+                    isPoseCorrect = response.isPoseCorrect,
+                    status = response.message
+                )
+            } catch (exception: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isPoseCorrect = false,
+                    status = exception.localizedMessage ?: ""
+                )
+            }
+
+
+//            println(repetition)
+
+//            val rows =
+//                first.map { "${it.x()}, ${it.y()}, ${it.z()}, ${it.visibility()}, ${it.presence()}" }
+//            Log.d("PoseLandmarker", rows.joinToString("\n"))
+//            Log.d("PoseLandmarker", "Landmark: x=${landmarks}")
+//            var first = landmarks.toList().first()
+//            var landmark = first.first()
+//            var x = landmark.x();
+//            var y = landmark.y();
+//            var z = landmark.z();
+//            Log.d("PoseLandmarker", "Landmark: x=$x, y=$y, z=$z")
             frame.close()
         }
     }
