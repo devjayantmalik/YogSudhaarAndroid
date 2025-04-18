@@ -3,19 +3,17 @@ package com.developbharat.yogsudhaar.ui.screens.check
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.util.Log
+import android.widget.Toast
 import androidx.camera.core.ImageProxy
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.developbharat.yogsudhaar.R
 import com.developbharat.yogsudhaar.common.Screens
 import com.developbharat.yogsudhaar.domain.api.IRemoteSource
 import com.developbharat.yogsudhaar.domain.api.dto.IsPoseCorrectInput
-import com.developbharat.yogsudhaar.domain.api.dto.IsPoseCorrectResult
 import com.developbharat.yogsudhaar.domain.api.dto.PoseData
 import com.developbharat.yogsudhaar.domain.splitters.VrksasanaSplitter
 import com.google.mediapipe.framework.image.BitmapImageBuilder
@@ -25,6 +23,7 @@ import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import kotlin.jvm.optionals.getOrNull
+
 
 class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel() {
     private var framesData: MutableList<List<Double>> = mutableListOf()
@@ -36,7 +35,8 @@ class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel
         .addConverterFactory(GsonConverterFactory.create())
         .build()
     val remoteSource = retrofit.create(IRemoteSource::class.java)
-
+    var logs: String = ""
+    var frameNo: Int = -1
 
     fun detectPose(
         detector: PoseLandmarker,
@@ -44,6 +44,8 @@ class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel
         isFrontCamera: Boolean,
         context: Context
     ) {
+        frameNo += 1
+//        Log.d("frames", logs)
         viewModelScope.launch {
 //            // TODO: Remove 2 lines to stop reading static image, and rather switch to live camera stream
 //            val bitmap = ResourcesCompat.getDrawable(context.resources, R.drawable.sample, null)!!
@@ -59,7 +61,7 @@ class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel
 
             // Format poses and add to frames.
             val poses = mutableListOf<Double>()
-            poses.add(framesData.count().toDouble())
+            poses.add(frameNo.toDouble())
             landmarks.forEach { item ->
                 poses.add(item.x().toDouble())
                 poses.add(item.y().toDouble())
@@ -67,15 +69,34 @@ class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel
                 poses.add(item.visibility().getOrNull()?.toDouble() ?: 0.0)
             }
             framesData.add(poses)
+//            val framesJoined = framesData.joinToString("\n") { it.joinToString(",") }
+//            logs += framesJoined + "\n"
+            Log.d("frames", poses.joinToString(","))
             val indexes = VrksasanaSplitter().split(framesData)
+//            Log.d("frames", "after split, indexes: $indexes")
+            Log.d("frames", "after split, indexes: $indexes")
+//            logs += "after split, indexes: $indexes\n"
+
             if (indexes == null) {
                 frame.close();
+                return@launch
+            }
+            if (indexes.second - indexes.first <= 7) {
+                Toast.makeText(
+                    context,
+                    "Please do the exercise Slowly or stand closer to camera.",
+                    Toast.LENGTH_LONG
+                ).show()
+                framesData.clear()
+                frame.close()
                 return@launch
             }
 
             // Get repetition data and remove repetition from frames data
             val repetition = framesData.subList(indexes.first, indexes.second + 1).toList()
-            framesData = framesData.subList(indexes.second, framesData.count())
+
+//            framesData = framesData.subList(indexes.second, framesData.count())
+            framesData.clear()
 
             // Check if pose is correct.
             try {
@@ -83,7 +104,10 @@ class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel
                 val response = remoteSource.isPoseCorrect(data)
                 _uiState.value = _uiState.value.copy(
                     isPoseCorrect = response.isPoseCorrect,
-                    status = response.message
+                    status = response.message + "(${repetition.first().first()},${
+                        repetition.last().first()
+                    })",
+                    totalRepetitionsCount = _uiState.value.totalRepetitionsCount + 1
                 )
             } catch (exception: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -105,6 +129,7 @@ class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel
 //            var y = landmark.y();
 //            var z = landmark.z();
 //            Log.d("PoseLandmarker", "Landmark: x=$x, y=$y, z=$z")
+
             frame.close()
         }
     }

@@ -1,11 +1,6 @@
 package com.developbharat.yogsudhaar.domain.splitters
 
-import kotlin.Double
-import kotlin.DoubleArray
-import kotlin.Int
-import kotlin.IntArray
-import kotlin.Pair
-import kotlin.intArrayOf
+import android.util.Log
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -13,7 +8,7 @@ import kotlin.math.sqrt
 
 
 class VrksasanaSplitter : IRepetitionSplitter {
-    private fun findPeaks(data: List<List<Double>>): List<IntArray> {
+    private fun findPeaks(data: List<List<Double>>): Pair<Int, Int>? {
         val targetColumn = 1 + 4 * 15 + 1
         val y = DoubleArray(data.count())
         for (i in 0..<data.count()) {
@@ -97,21 +92,22 @@ class VrksasanaSplitter : IRepetitionSplitter {
         val stdDev = sqrt(sumSq / prominences.size)
 
         // Find good peaks (prominences > 1 * stdDev)
-        val goodPeaks = mutableListOf<IntArray>()
-
         for (i in 0..<prominences.count()) {
             if (prominences[i] > 1 * stdDev) {
                 val peak: Int = peaks.get(i)!!
                 val key = y[peak] - (prominences[i] * 0.9)
 
-                val e0 = findBefore(key, peak, y)
-                val s1 = findAfter(key, peak, y)
+                val from = findBefore(key, peak, y)
+                val till = findAfter(key, peak, y)
 
-                goodPeaks.add(intArrayOf(e0, s1))
+                // Print frame number
+                Log.d("frames", "(${data[from][0]}, ${data[till][0]})")
+
+                return Pair<Int, Int>(from, till)
             }
         }
 
-        return goodPeaks
+        return null;
     }
 
     /**
@@ -146,13 +142,6 @@ class VrksasanaSplitter : IRepetitionSplitter {
 
 
     override fun split(frames: List<List<Double>>): Pair<Int, Int>? {
-        val indexes = findPeaks(frames)
-        if (indexes.isEmpty()) return null;
-        return Pair<Int, Int>(indexes.first()[0], indexes.first()[1])
-
-//        val repetitions = indexes.fastMap {
-//            frames.slice(it.first()..it.last())
-//        }
-//        return repetitions
+        return findPeaks(frames)
     }
 }

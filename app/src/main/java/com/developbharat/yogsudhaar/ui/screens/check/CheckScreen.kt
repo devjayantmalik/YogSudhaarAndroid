@@ -1,6 +1,7 @@
 package com.developbharat.yogsudhaar.ui.screens.check
 
 import android.content.pm.ActivityInfo
+import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -10,6 +11,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,9 +51,18 @@ fun CheckScreen(navController: NavController, viewModel: CheckViewModel = viewMo
         val modelOptions = PoseLandmarkerOptions.builder()
             .setBaseOptions(CameraOptions.baseModelOptions)
             .setRunningMode(RunningMode.IMAGE)
+            .setOutputSegmentationMasks(false)
             .build()
 
         PoseLandmarker.createFromOptions(context, modelOptions)
+    }
+
+    LaunchedEffect(Unit) {
+        Toast.makeText(
+            context,
+            "Please keep the distance of minimum 1.5 to 2 meters for best results.",
+            Toast.LENGTH_LONG
+        ).show()
     }
 
 
@@ -67,6 +78,7 @@ fun CheckScreen(navController: NavController, viewModel: CheckViewModel = viewMo
             title = uiState.selectedAsana.name,
             subtitle = uiState.status ?: "${uiState.selectedAsana.cameraMode.name} Mode",
             actions = {
+                Text("R: ${uiState.totalRepetitionsCount}")
                 IconButton(onClick = { isFrontCameraSelected = !isFrontCameraSelected }) {
                     Icon(
                         Icons.Outlined.SwitchCamera,
