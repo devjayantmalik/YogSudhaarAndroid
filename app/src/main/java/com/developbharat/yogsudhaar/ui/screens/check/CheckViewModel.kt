@@ -1,6 +1,7 @@
 package com.developbharat.yogsudhaar.ui.screens.check
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.speech.tts.TextToSpeech
@@ -9,6 +10,7 @@ import android.widget.Toast
 import androidx.camera.core.ImageProxy
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.core.content.ContextCompat
 import androidx.compose.runtime.remember
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -44,6 +46,19 @@ class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel
     var tts: TextToSpeech? = null
     var logs: String = ""
     var frameNo: Int = -1
+
+
+    fun checkAndUpdateCameraPermission(context: Context) {
+        val isGranted = isCameraPermissionGranted(context)
+        _uiState.value = _uiState.value.copy(isCameraPermissionGranted = isGranted)
+    }
+
+    private fun isCameraPermissionGranted(context: Context): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
 
     fun initTts(context: Context) {
         tts = TextToSpeech(context, { status ->

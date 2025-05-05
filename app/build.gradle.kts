@@ -95,4 +95,8 @@ dependencies {
     // retrofit
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
+
+
+    // accompanist permissions
+    implementation(libs.accompanist)
 }
