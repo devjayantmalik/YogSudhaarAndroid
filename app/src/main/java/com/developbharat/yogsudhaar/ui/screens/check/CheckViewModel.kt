@@ -3,11 +3,13 @@ package com.developbharat.yogsudhaar.ui.screens.check
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.widget.Toast
 import androidx.camera.core.ImageProxy
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,12 +18,15 @@ import com.developbharat.yogsudhaar.domain.api.IRemoteSource
 import com.developbharat.yogsudhaar.domain.api.dto.IsPoseCorrectInput
 import com.developbharat.yogsudhaar.domain.api.dto.PoseData
 import com.developbharat.yogsudhaar.domain.splitters.VrksasanaSplitter
+import com.developbharat.yogsudhaar.ui.screens.check.components.OverlayView
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.framework.image.MPImage
+import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.Locale
 import kotlin.jvm.optionals.getOrNull
 
 
@@ -35,8 +40,29 @@ class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel
         .addConverterFactory(GsonConverterFactory.create())
         .build()
     val remoteSource = retrofit.create(IRemoteSource::class.java)
+    val overlayViewRef = mutableStateOf<OverlayView?>(null)
+    var tts: TextToSpeech? = null
     var logs: String = ""
     var frameNo: Int = -1
+
+    fun initTts(context: Context) {
+        tts = TextToSpeech(context, { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = tts?.setLanguage(Locale.US)
+
+                if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
+                }
+            }
+        });
+    }
+
+     fun speak(text: String) {
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts1")
+    }
+
+    fun setDisplaySkeleton(enabled: Boolean = false) {
+        _uiState.value = _uiState.value.copy(isDisplaySkeletonEnabled = enabled)
+    }
 
     fun detectPose(
         detector: PoseLandmarker,
@@ -52,12 +78,23 @@ class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel
 //                .toBitmap(config = Bitmap.Config.ARGB_8888)
 //            val mpImage: MPImage = BitmapImageBuilder(bitmap).build()
             val mpImage = convertToModelInput(frame, isFrontCamera)
-            val landmarksList = detector.detect(mpImage).landmarks()
+            val detectedResult = detector.detect(mpImage)
+            val landmarksList = detectedResult.landmarks()
             if (landmarksList.isEmpty()) {
                 frame.close()
                 return@launch
             }
             val landmarks = landmarksList.first()
+
+            // draw landmarks
+            if (_uiState.value.isDisplaySkeletonEnabled) {
+                overlayViewRef.value?.setResults(
+                    detectedResult,
+                    mpImage.height,
+                    mpImage.width,
+                    RunningMode.IMAGE
+                )
+            }
 
             // Format poses and add to frames.
             val poses = mutableListOf<Double>()
@@ -82,6 +119,7 @@ class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel
                 return@launch
             }
             if (indexes.second - indexes.first <= 7) {
+                speak("Please do the exercise Slowly or stand closer to camera.")
                 Toast.makeText(
                     context,
                     "Please do the exercise Slowly or stand closer to camera.",

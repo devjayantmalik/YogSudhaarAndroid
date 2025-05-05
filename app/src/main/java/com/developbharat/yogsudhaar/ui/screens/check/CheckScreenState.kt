@@ -7,4 +7,5 @@ data class CheckScreenState(
     val isPoseCorrect: Boolean = true,
     val status: String? = null,
     val totalRepetitionsCount: Int = 0,
+    val isDisplaySkeletonEnabled: Boolean = false,
 )

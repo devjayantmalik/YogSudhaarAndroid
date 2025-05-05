@@ -2,9 +2,11 @@ package com.developbharat.yogsudhaar.ui.screens.check
 
 import android.content.pm.ActivityInfo
 import android.widget.Toast
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.SwitchCamera
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -20,11 +22,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.developbharat.yogsudhaar.common.CameraOptions
 import com.developbharat.yogsudhaar.common.SetScreenOrientation
 import com.developbharat.yogsudhaar.domain.models.CameraMode
+import com.developbharat.yogsudhaar.ui.screens.check.components.OverlayView
 import com.developbharat.yogsudhaar.ui.screens.components.CameraPreview
 import com.developbharat.yogsudhaar.ui.screens.components.SmallTopBar
 import com.google.mediapipe.tasks.vision.core.RunningMode
@@ -57,7 +61,12 @@ fun CheckScreen(navController: NavController, viewModel: CheckViewModel = viewMo
         PoseLandmarker.createFromOptions(context, modelOptions)
     }
 
+    LaunchedEffect(uiState.status) {
+        if (!uiState.status.isNullOrBlank()) viewModel.speak(uiState.status)
+    }
+
     LaunchedEffect(Unit) {
+        viewModel.speak("Please keep the distance of minimum 1.5 to 2 meters for best results.")
         Toast.makeText(
             context,
             "Please keep the distance of minimum 1.5 to 2 meters for best results.",
@@ -68,6 +77,10 @@ fun CheckScreen(navController: NavController, viewModel: CheckViewModel = viewMo
 
     // TODO: ask for camera permission if not granted, if declined show error instead of camera ui
     LaunchedEffect(Unit) {
+        // initialise tts
+        viewModel.initTts(context)
+
+        // initialise camera frame analysis
         CameraOptions.frameAnalysisOptions.setAnalyzer(Dispatchers.Default.asExecutor()) { frame ->
             viewModel.detectPose(detector, frame, isFrontCameraSelected, context)
         }
@@ -85,14 +98,39 @@ fun CheckScreen(navController: NavController, viewModel: CheckViewModel = viewMo
                         contentDescription = "Switch Camera"
                     )
                 }
+                IconButton(onClick = { viewModel.setDisplaySkeleton(!uiState.isDisplaySkeletonEnabled) }) {
+                    Icon(
+                        Icons.Outlined.BugReport,
+                        contentDescription = if (uiState.isDisplaySkeletonEnabled) "Hide Skeleton" else "Show Skeleton"
+                    )
+                }
             }
         )
     }) { paddingValues ->
         Surface(modifier = Modifier.padding(paddingValues)) {
-            CameraPreview(
-                isFrontCameraSelected = isFrontCameraSelected,
-                modifier = Modifier.fillMaxSize()
-            )
+//            CameraPreview(
+//                isFrontCameraSelected = isFrontCameraSelected,
+//                modifier = Modifier.fillMaxSize()
+//            )
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                CameraPreview(
+                    isFrontCameraSelected = isFrontCameraSelected,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                // OverlayView from XML embedded in Compose
+                if (uiState.isDisplaySkeletonEnabled) {
+                    AndroidView(
+                        factory = { context ->
+                            OverlayView(context, null).also {
+                                viewModel.overlayViewRef.value = it
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
         }
     }
 }
