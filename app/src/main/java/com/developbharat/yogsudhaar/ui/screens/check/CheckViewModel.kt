@@ -11,7 +11,6 @@ import androidx.camera.core.ImageProxy
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
-import androidx.compose.runtime.remember
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -71,7 +70,7 @@ class CheckViewModel constructor(savedStateHandle: SavedStateHandle) : ViewModel
         });
     }
 
-     fun speak(text: String) {
+    fun speak(text: String) {
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts1")
     }
 

@@ -12,7 +12,7 @@ object CameraOptions {
 
     
     val baseModelOptions = BaseOptions.builder()
-        .setModelAssetPath("pose_landmarker_heavy.task") // Place your .task model in assets
+        .setModelAssetPath("pose_landmarker_full.task") // Place your .task model in assets
         .setDelegate(Delegate.GPU)
         .build()
 }
