@@ -76,7 +76,7 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
 
     private fun vectorSubtract(a: List<Float>, b: List<Float>): List<Float> {
         val items = mutableListOf<Float>()
-        for (i in 0..a.size) {
+        for (i in 0..a.size - 1) {
             items.add(a[i] - b[i])
         }
         return items
@@ -130,12 +130,15 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
                         if (mean == null || std == null) continue
 
                         val paint =
-                            if (abs(angle - mean) <= (3 * std)) createPaint(Color.GREEN) else createPaint(
-                                Color.RED
+                            if (abs(angle - mean) <= (3 * std)) createPaint(
+                                Color.GREEN,
+                                Paint.Style.FILL
+                            ) else createPaint(
+                                Color.RED, Paint.Style.FILL
                             )
 
                         val x = b.x() * imageWidth * scaleFactor
-                        val y = b.y() * imageWidth * scaleFactor
+                        val y = b.y() * imageHeight * scaleFactor
                         canvas.drawPoint(x, y, paint)
                     }
                 }
@@ -187,6 +190,6 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
     }
 
     companion object {
-        private const val LANDMARK_STROKE_WIDTH = 12F
+        private const val LANDMARK_STROKE_WIDTH = 15F
     }
 }
